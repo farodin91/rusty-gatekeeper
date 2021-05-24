@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="columns">
+  <div class="column">
+    <nav class="panel">
+      <p class="panel-heading">
+        Constraint Templates
+      </p>
+      {% for s in items %}
+      <a class="panel-block">
+        <span class="panel-icon">
+          <i class="fas fa-book" aria-hidden="true"></i>
+        </span>
+        {{ s.name }}
+      </a>
+      {% endfor %}
+    </nav>
+  </div>
+  <div class="column is-four-fifths">
+    {% for s in items %}
+    <div class="box">
+      <nav class="level">
+        <!-- Left side -->
+        <div class="level-left">
+          <div class="level-item">
+            <p class="subtitle is-5">
+              {{ s.name }}
+            </p>
+          </div>
+        </div>
+      </nav>
+      {% for t in s.spec.targets %}
+      <div class="card">
+        <header class="card-header">
+          <p class="card-header-title">
+            {{t.target}}
+          </p>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <pre>{{t.rego}}</pre>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock content %}
