@@ -82,7 +82,6 @@ pub async fn constraint_template(
 #[get("/constraint/")]
 pub async fn constraint(client: web::Data<KubeGatekeeperClient>) -> Result<HttpResponse, Error> {
     let items = client.get_constraints().await?;
-    info!("constraints: {:#?}", items);
 
     let t = BaseTemplate::new("Constraints");
     let s = TemplateConstraint { _parent: t, items }.render().unwrap();

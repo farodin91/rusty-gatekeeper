@@ -71,6 +71,9 @@
         </div>
       </nav>
       <div class="content">
+        {% if s.status.violations.len() == 0 %}
+        There are no violations for this Constraint
+        {% else %}
         <table class="table is-striped is-fullwidth">
           <thead>
             <tr>
@@ -93,6 +96,7 @@
             {% endfor %}
           </tbody>
         </table>
+        {% endif %}
 
         {% if s.spec.match_spec.is_some() %}
         {% let match_spec = s.spec.match_spec.clone().unwrap() %}
@@ -100,34 +104,111 @@
         <div class="ui segment">
           <h5>Match criteria</h5>
 
-          <div class="ui horizontal very relaxed divided list">
+          <div class="columns is-3">
 
-            <div class="top aligned item">
-              <div class="header">Scope</div>
-              <div class="content">{{ match_spec.scope }}</div>
+            {% if match_spec.kinds.len() != 0 %}
+            <div class="card column">
+              <header class="card-header">
+                <p class="card-header-title">
+                  Kinds
+                </p>
+              </header>
+              <div class="card-content">
+                <div class="content">
+                  <div class="ui horizontal relaxed list">
+                    {% for k in match_spec.kinds %}
+                    <div class="top aligned item">
+                      <div class="header">API Groups</div>
+                      {% for ag in k.api_groups %}
+                        <div class="content">
+                          {{ ag }}
+                        </div>
+                      {% endfor %}
+                    </div>
+                    <div class="top aligned item">
+                      <div class="header">Kinds</div>
+                      {% for k in k.kinds %}
+                        <div class="content">
+                          {{ k }}
+                        </div>
+                      {% endfor %}
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="card column">
+              <header class="card-header">
+                <p class="card-header-title">
+                  Scope
+                </p>
+              </header>
+              <div class="card-content">
+                <div class="content">
+                  {{ match_spec.scope }}
+                </div>
+              </div>
             </div>
             {% if match_spec.namespaces.is_some() %}
-            <div class="top aligned item">
-              <div class="header">Namespaces</div>
-              {% for ns in match_spec.namespaces.unwrap() %}
-              <div class="content">{{ ns }}</div>
-              {% endfor %}
+            <div class="card column">
+              <header class="card-header">
+                <p class="card-header-title">
+                  Namespaces
+                </p>
+              </header>
+              <div class="card-content">
+                <div class="content">
+                  <ul>
+                    {% for ns in match_spec.namespaces.unwrap() %}
+                    <li>{{ ns }}</li>
+                    {% endfor %}                    
+                  </ul>
+                </div>
+              </div>
             </div>
             {% endif %}
             {% if match_spec.excluded_namespaces.is_some() %}
-            <div class="top aligned item">
-              <div class="header">Excluded Namespaces</div>
-              {% for excludedns in match_spec.excluded_namespaces.unwrap() %}
-              <div class="content">{{ excludedns }}</div>
-              {% endfor %}
+            <div class="card column">
+              <header class="card-header">
+                <p class="card-header-title">
+                  Excluded Namespaces
+                </p>
+              </header>
+              <div class="card-content">
+                <div class="content">
+                  <ul>
+                    {% for ns in match_spec.excluded_namespaces.unwrap() %}
+                    <li>{{ ns }}</li>
+                    {% endfor %}                    
+                  </ul>
+                </div>
+              </div>
             </div>
             {% endif %}
           </div>
         </div>
         {% endif %}
-      </div>
-      <div class="content">
-        <p>Status at {{s.status.audit_timestamp}}</p>
+        <hr />
+        <div class="ui segment">
+          <h5>Parameters</h5>
+          <div class="ui horizontal very relaxed divided list">
+            {% for (k,v) in s.spec.parameters %}
+            <div class="top aligned item">
+              <div class="content">
+                <div class="header">{{ k }}</div>
+                {{ v }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <hr />
+        <div>
+          <p>Status at {{s.status.audit_timestamp}}</p>
+        </div>
       </div>
     </div>
     {% endfor %}

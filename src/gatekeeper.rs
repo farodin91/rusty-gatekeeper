@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{convert::TryInto, fmt::Display};
 
 use async_trait::async_trait;
@@ -7,14 +8,17 @@ use kube::{
     api::{DynamicObject, ResourceExt},
     client::discovery::Discovery,
 };
-use log::{info, warn};
+use log::{warn};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GatekeeperError {
     #[error("kube api error")]
     Kube(#[from] kube::Error),
+    #[error("serde json error")]
+    SerdeJson(#[from] serde_json::Error),
     #[error("unknown gatekeeper error")]
     Unknown,
     #[error("conversion error")]
@@ -31,6 +35,7 @@ pub struct ConstraintTemplate {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConstraintTemplateSpec {
+    pub crd: Value,
     pub targets: Vec<TemplateTarget>,
 }
 
@@ -79,6 +84,7 @@ pub struct ConstraintSpec {
     pub enforcement_action: EnforcementAction,
     #[serde(rename = "match")]
     pub match_spec: Option<MatchSpec>,
+    pub parameters: HashMap<String, Value>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -101,9 +107,18 @@ impl Display for MatchScope {
         write!(f, "{:?}", self)
     }
 }
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MatchKind {
+    #[serde(rename="apiGroups", default)]
+    pub api_groups: Vec<String>,
+    #[serde(default)]
+    pub kinds: Vec<String>,
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MatchSpec {
+    #[serde(default)]
+    pub kinds: Vec<MatchKind>,
     #[serde(default)]
     pub scope: MatchScope,
     #[serde(default)]
@@ -140,12 +155,7 @@ impl TryInto<ConstraintTemplate> for DynamicObject {
 
     fn try_into(self) -> Result<ConstraintTemplate, Self::Error> {
         let name = self.name();
-
-        let mut constraint_template: ConstraintTemplate = serde_json::from_value(self.data)
-            .map_err(|t| {
-                info!("{:?}", t);
-                GatekeeperError::FailedConversion
-            })?;
+        let mut constraint_template: ConstraintTemplate = serde_json::from_value(self.data)?;
 
         constraint_template.name = name;
         Ok(constraint_template)
@@ -159,10 +169,7 @@ impl TryInto<Constraint> for DynamicObject {
         let name = self.name();
         let kind = self.types.ok_or(GatekeeperError::FailedConversion)?.kind;
 
-        let mut constraint: Constraint = serde_json::from_value(self.data).map_err(|t| {
-            info!("{:?}", t);
-            GatekeeperError::FailedConversion
-        })?;
+        let mut constraint: Constraint = serde_json::from_value(self.data)?;
         constraint.name = name;
         constraint.kind = kind;
         Ok(constraint)
